@@ -109,48 +109,49 @@
     [UIApplication sharedApplication].statusBarHidden = NO;
     [self addIndicatorViewToPickerView:picker.view];
     
-    GCD_Back_Begin
-    NSString *mediaType = [info objectForKey:UIImagePickerControllerMediaType];
-    UIImage *image = nil;
-    NSString *videoPath = nil;
-    if ([mediaType isEqualToString:@"public.image"]) {
-        UIImage *originImage;
-        if (self.isEdit) {
-            originImage = [info objectForKey:UIImagePickerControllerEditedImage];
-        } else {
-            originImage = [info objectForKey:UIImagePickerControllerOriginalImage];
+    dispatch_async(dispatch_get_global_queue(0, 0), ^{
+        NSString *mediaType = [info objectForKey:UIImagePickerControllerMediaType];
+        UIImage *image = nil;
+        NSString *videoPath = nil;
+        if ([mediaType isEqualToString:@"public.image"]) {
+            UIImage *originImage;
+            if (self.isEdit) {
+                originImage = [info objectForKey:UIImagePickerControllerEditedImage];
+            } else {
+                originImage = [info objectForKey:UIImagePickerControllerOriginalImage];
+            }
+            
+            if (self.isSaveToAlbum) {
+                UIImageWriteToSavedPhotosAlbum(originImage, NULL, NULL, NULL);
+            }
+            
+            UIImage *scaleImage = [UIImage scaleImage:originImage toScale:0.3];
+            
+            NSData  *data;
+            if (UIImagePNGRepresentation(scaleImage) == nil) {
+                data = UIImageJPEGRepresentation(scaleImage, 0.9);
+            } else {
+                data = UIImagePNGRepresentation(scaleImage);
+            }
+            image = [UIImage imageWithData:data];
+            
+        } else if ([mediaType isEqualToString:@"public.movie"]){
+            videoPath = [(NSURL *)[info objectForKey:UIImagePickerControllerMediaURL] path];
+            image = [UIImage imageFromVideo:videoPath];
+            
+            if (self.isSaveToAlbum) {
+                UIVideoAtPathIsCompatibleWithSavedPhotosAlbum(videoPath);
+            }
         }
         
-        if (self.isSaveToAlbum) {
-            UIImageWriteToSavedPhotosAlbum(originImage, NULL, NULL, NULL);
-        }
-        
-        UIImage *scaleImage = [UIImage scaleImage:originImage toScale:0.3];
-        
-        NSData  *data;
-        if (UIImagePNGRepresentation(scaleImage) == nil) {
-            data = UIImageJPEGRepresentation(scaleImage, 0.9);
-        } else {
-            data = UIImagePNGRepresentation(scaleImage);
-        }
-        image = [UIImage imageWithData:data];
-        
-    } else if ([mediaType isEqualToString:@"public.movie"]){
-        videoPath = [(NSURL *)[info objectForKey:UIImagePickerControllerMediaURL] path];
-        image = [UIImage imageFromVideo:videoPath];
-        
-        if (self.isSaveToAlbum) {
-            UIVideoAtPathIsCompatibleWithSavedPhotosAlbum(videoPath);
-        }
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self removeIndicatorViewFromPikerView:picker.view];
+            if (self.blockComplete) {
+                self.blockComplete(image, videoPath);
+            }
+            [self dismissPickerViewController:picker];
+        });
     }
-    GCD_Fore_Begin
-    [self removeIndicatorViewFromPikerView:picker.view];
-    if (self.blockComplete) {
-        self.blockComplete(image, videoPath);
-    }
-    [self dismissPickerViewController:picker];
-    GCD_Fore_End
-    GCD_Back_End
 }
 
 - (void)imagePickerControllerDidCancel:(UIImagePickerController *)picker

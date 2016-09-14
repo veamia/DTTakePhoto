@@ -83,10 +83,6 @@
         picker.sourceType = sourceType;
         picker.mediaTypes = [UIImagePickerController availableMediaTypesForSourceType:sourceType];
         [viewControl presentViewController:picker animated:YES completion:NULL];
-    } else {
-//        if (complete) {
-//            complete(nil, nil);
-//        }
     }
 }
 
@@ -106,45 +102,7 @@
 
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info
 {
-    [UIApplication sharedApplication].statusBarHidden = NO;
-    [self addIndicatorViewToPickerView:picker.view];
     
-    dispatch_async(dispatch_get_global_queue(0, 0), ^{
-        NSString *mediaType = [info objectForKey:UIImagePickerControllerMediaType];
-        UIImage *image = nil;
-        NSString *videoPath = nil;
-        if ([mediaType isEqualToString:@"public.image"]) {
-            UIImage *originImage;
-            if (self.isEdit) {
-                originImage = [info objectForKey:UIImagePickerControllerEditedImage];
-            } else {
-                originImage = [info objectForKey:UIImagePickerControllerOriginalImage];
-            }
-            
-            if (self.isSaveToAlbum) {
-                UIImageWriteToSavedPhotosAlbum(originImage, NULL, NULL, NULL);
-            }
-            
-            UIImage *scaleImage = originImage;
-            //[UIImage scaleImage:originImage toScale:0.3];
-            
-            NSData  *data;
-            if (UIImagePNGRepresentation(scaleImage) == nil) {
-                data = UIImageJPEGRepresentation(scaleImage, 0.9);
-            } else {
-                data = UIImagePNGRepresentation(scaleImage);
-            }
-            image = [UIImage imageWithData:data];
-        }
-        
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [self removeIndicatorViewFromPikerView:picker.view];
-            if (self.blockComplete) {
-                self.blockComplete(image, videoPath);
-            }
-            [self dismissPickerViewController:picker];
-        });
-    });
 }
 
 - (void)imagePickerControllerDidCancel:(UIImagePickerController *)picker

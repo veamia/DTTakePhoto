@@ -125,7 +125,8 @@
                 UIImageWriteToSavedPhotosAlbum(originImage, NULL, NULL, NULL);
             }
             
-            UIImage *scaleImage = [UIImage scaleImage:originImage toScale:0.3];
+            UIImage *scaleImage = originImage;
+            //[UIImage scaleImage:originImage toScale:0.3];
             
             NSData  *data;
             if (UIImagePNGRepresentation(scaleImage) == nil) {
@@ -134,14 +135,6 @@
                 data = UIImagePNGRepresentation(scaleImage);
             }
             image = [UIImage imageWithData:data];
-            
-        } else if ([mediaType isEqualToString:@"public.movie"]){
-            videoPath = [(NSURL *)[info objectForKey:UIImagePickerControllerMediaURL] path];
-            image = [UIImage imageFromVideo:videoPath];
-            
-            if (self.isSaveToAlbum) {
-                UIVideoAtPathIsCompatibleWithSavedPhotosAlbum(videoPath);
-            }
         }
         
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -151,7 +144,7 @@
             }
             [self dismissPickerViewController:picker];
         });
-    }
+    });
 }
 
 - (void)imagePickerControllerDidCancel:(UIImagePickerController *)picker
